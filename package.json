@@ -1,0 +1,10 @@
+{
+  "name": "go-libp2p-bootstrap",
+  "author": "florian",
+  "version": "0.0.0",
+  "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
+  "license": "",
+  "bugs": {},
+  "gxVersion": "0.12.1"
+}
+
