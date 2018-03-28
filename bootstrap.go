@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gx/ipfs/QmNmJZL7FQySMtE2BQuLMuZg2EB2CLEunJJUSVSc9YnnbV/go-libp2p-host"
-	"gx/ipfs/QmQViVWBHbU6HmYjXcdNq7tVASCNgdg64ZGcauuDkLCivW/go-ipfs-addr"
-	"gx/ipfs/QmXauCuJzmzapetmC6W4TuDJLL1yFFrVzSHoWv8YdbmnxH/go-libp2p-peerstore"
-	"gx/ipfs/QmXfkENeeBvh3zYA51MaSdGUdBjhQ99cP5WQe8zgr6wchG/go-libp2p-net"
+	"github.com/ipfs/go-ipfs-addr"
+	"github.com/libp2p/go-libp2p-host"
+	"github.com/libp2p/go-libp2p-net"
+	"github.com/libp2p/go-libp2p-peerstore"
 )
 
 type Bootstrap struct {
