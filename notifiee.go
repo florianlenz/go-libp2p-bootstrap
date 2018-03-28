@@ -2,8 +2,8 @@ package bootstrap
 
 //@todo this was taken from the go-libp2p-net lib since the NotifyBundle is not in the latest release
 import (
-	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
-	"gx/ipfs/QmXfkENeeBvh3zYA51MaSdGUdBjhQ99cP5WQe8zgr6wchG/go-libp2p-net"
+	"github.com/libp2p/go-libp2p-net"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 // NotifyBundle implements Notifiee by calling any of the functions set on it,
