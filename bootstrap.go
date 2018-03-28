@@ -8,54 +8,87 @@ import (
 	"gx/ipfs/QmQViVWBHbU6HmYjXcdNq7tVASCNgdg64ZGcauuDkLCivW/go-ipfs-addr"
 	"gx/ipfs/QmXauCuJzmzapetmC6W4TuDJLL1yFFrVzSHoWv8YdbmnxH/go-libp2p-peerstore"
 	"gx/ipfs/QmXfkENeeBvh3zYA51MaSdGUdBjhQ99cP5WQe8zgr6wchG/go-libp2p-net"
-	"sync"
 )
 
 type Bootstrap struct {
 	minPeers       int
-	bootstrapPeers []string
+	bootstrapPeers []*peerstore.PeerInfo
 	host           host.Host
 	notifiee       *NotifyBundle
+	bootstrapping  bool
 }
 
-//Bootstrap till we have the required amount of peer's
-func (b *Bootstrap) all() {
+//Get the amount of peer's we are connected to
+func (b *Bootstrap) amountConnPeers() int {
+	return len(b.host.Network().Peers())
+}
 
-	wg := sync.WaitGroup{}
+//Check if the bootstrapping is locked
+func (b *Bootstrap) locked() bool {
+	return b.bootstrapping
+}
 
-	//Loop the nodes
-	for _, peer := range b.bootstrapPeers {
+//Lock bootstrapping which will prevent from bootstrapping again
+//when the previous bootstrap hasn't finished
+func (b *Bootstrap) lock() {
 
-		ctx := context.Background()
-		iAddr, err := ipfsaddr.ParseString(peer)
-
-		//@todo change this later on
-		if err != nil {
-			panic(err)
-		}
-
-		//Get peer info
-		pInfo, err := peerstore.InfoFromP2pAddr(iAddr.Multiaddr())
-
-		//Connect to the peer
-		wg.Add(1)
-		go func() {
-
-			if len(b.host.Peerstore().Peers()) < b.minPeers {
-				if err := b.host.Connect(ctx, *pInfo); err != nil {
-					panic(err)
-				}
-				fmt.Println("connected to: ", pInfo)
-				wg.Done()
-				return
-			}
-			wg.Done()
-		}()
-
+	if b.bootstrapping == true {
+		panic("Bootstrapping is already locked")
 	}
 
-	wg.Wait()
+	b.bootstrapping = true
 
+}
+
+//Unlock bootstrapping so that we can again bootstrap
+//in case we have to
+func (b *Bootstrap) unlock() {
+
+	if b.bootstrapping == false {
+		panic("Bootstrapping is already unlocked")
+	}
+
+	b.bootstrapping = false
+
+}
+
+//Start bootstrapping
+func (b *Bootstrap) bootstrapp() {
+
+	//Lock bootstrapping
+	b.lock()
+
+	go func() {
+
+		for b.amountConnPeers() < b.minPeers {
+
+			c := make(chan struct{})
+
+			for _, v := range b.bootstrapPeers {
+
+				go func() {
+					if b.amountConnPeers() < b.minPeers {
+						ctx := context.Background()
+						if err := b.host.Connect(ctx, *v); err != nil {
+							fmt.Println("Failed to connect to: ", v)
+							c <- struct{}{}
+							return
+						}
+						fmt.Println("Connected to: ", v)
+						c <- struct{}{}
+						return
+					}
+					c <- struct{}{}
+				}()
+
+				<-c
+
+			}
+
+		}
+		//Unlock bootstrapping
+		b.unlock()
+	}()
 }
 
 //Start bootstrapping
@@ -64,17 +97,18 @@ func (b *Bootstrap) Start() {
 	//Listener
 	notifyBundle := NotifyBundle{
 		DisconnectedF: func(network net.Network, conn net.Conn) {
-
-			b.all()
-
+			fmt.Println("Dropped connnection to peer: ", conn.RemotePeer().String())
+			//Only bootstrapp when we are currently not bootstrapping
+			if b.locked() == false {
+				b.bootstrapp()
+			}
 		},
 	}
 
-	//Register listener
+	//Register listener to react on dropped connections
 	b.host.Network().Notify(&notifyBundle)
 
-	//Initial bootstrap
-	b.all()
+	b.bootstrapp()
 }
 
 //Create new bootstrapper
@@ -84,9 +118,27 @@ func NewBootstrap(h host.Host, bootstrapPeers []string, minPeers int) (error, Bo
 		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", minPeers, len(bootstrapPeers))), Bootstrap{}
 	}
 
+	var peers []*peerstore.PeerInfo
+
+	for _, v := range bootstrapPeers {
+		iAddr, err := ipfsaddr.ParseString(v)
+
+		if err != nil {
+			return err, Bootstrap{}
+		}
+
+		pInfo, err := peerstore.InfoFromP2pAddr(iAddr.Multiaddr())
+
+		if err != nil {
+			return err, Bootstrap{}
+		}
+
+		peers = append(peers, pInfo)
+	}
+
 	return nil, Bootstrap{
 		minPeers:       minPeers,
-		bootstrapPeers: bootstrapPeers,
+		bootstrapPeers: peers,
 		host:           h,
 	}
 
