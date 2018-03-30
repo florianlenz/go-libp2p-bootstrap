@@ -8,14 +8,41 @@ import (
 	"github.com/libp2p/go-libp2p-host"
 	"github.com/libp2p/go-libp2p-net"
 	"github.com/libp2p/go-libp2p-peerstore"
+	"time"
 )
 
 type Bootstrap struct {
-	minPeers       int
-	bootstrapPeers []*peerstore.PeerInfo
-	host           host.Host
-	notifiee       *NotifyBundle
-	bootstrapping  bool
+	minPeers                int
+	bootstrapPeers          []*peerstore.PeerInfo
+	host                    host.Host
+	notifiee                *NotifyBundle
+	interfaceListenerLocked bool
+	bootstrapInterval       time.Duration
+}
+
+//Lock the interface listener
+func (b *Bootstrap) lockInterfaceListener() {
+
+	if b.interfaceListenerLocked == true {
+		panic("Interface listener is already locked")
+	}
+
+	b.interfaceListenerLocked = true
+}
+
+//Unlock the interface listener
+func (b *Bootstrap) unlockInterfaceListener() {
+
+	if b.interfaceListenerLocked == false {
+		panic("Interface listener is already unlocked")
+	}
+
+	b.interfaceListenerLocked = false
+}
+
+//Is the interface listener locked
+func (b *Bootstrap) isInterfaceListenerLocked() bool {
+	return b.interfaceListenerLocked
 }
 
 //Get the amount of peer's we are connected to
@@ -23,84 +50,102 @@ func (b *Bootstrap) amountConnPeers() int {
 	return len(b.host.Network().Peers())
 }
 
-//Check if the bootstrapping is locked
-func (b *Bootstrap) locked() bool {
-	return b.bootstrapping
-}
+//Register a network state change handler
+func (b *Bootstrap) networkInterfaceListener() {
 
-//Lock bootstrapping which will prevent from bootstrapping again
-//when the previous bootstrap hasn't finished
-func (b *Bootstrap) lock() {
+	//Lock down the interface listener
+	b.lockInterfaceListener()
 
-	if b.bootstrapping == true {
-		panic("Bootstrapping is already locked")
+	breakLoop := false
+
+	//Get multi addresses
+	mas, err := b.host.Network().InterfaceListenAddresses()
+
+	if err != nil {
+		panic(err)
 	}
 
-	b.bootstrapping = true
-
-}
-
-//Unlock bootstrapping so that we can again bootstrap
-//in case we have to
-func (b *Bootstrap) unlock() {
-
-	if b.bootstrapping == false {
-		panic("Bootstrapping is already unlocked")
-	}
-
-	b.bootstrapping = false
-
-}
-
-//Start bootstrapping
-func (b *Bootstrap) bootstrap() {
-
-	//Lock bootstrapping
-	b.lock()
+	lastNetworkState := len(mas)
 
 	go func() {
 
-		for b.amountConnPeers() < b.minPeers {
+		for {
 
-			c := make(chan struct{})
+			//Exit the network listener
+			if breakLoop == true {
+				b.unlockInterfaceListener()
+				break
+			}
 
-			for _, v := range b.bootstrapPeers {
+			//Get addresses
+			mas, err := b.host.Network().InterfaceListenAddresses()
 
-				go func() {
-					if b.amountConnPeers() < b.minPeers {
-						ctx := context.Background()
-						if err := b.host.Connect(ctx, *v); err != nil {
-							fmt.Println("Failed to connect to: ", v)
-							c <- struct{}{}
-							return
-						}
-						fmt.Println("Connected to: ", v)
-						c <- struct{}{}
-						return
-					}
-					c <- struct{}{}
-				}()
+			if err != nil {
+				panic(err)
+			}
 
-				<-c
+			//Bootstrap on address delta
+			if len(mas) != lastNetworkState {
+				lastNetworkState = len(mas)
+				b.bootstrap()
+
+				//We can un register the handler when we are connected to enought peer's
+				if len(b.host.Network().Peers()) >= b.minPeers {
+					breakLoop = true
+				}
 
 			}
 
+			time.Sleep(time.Second * 2)
+
 		}
-		//Unlock bootstrapping
-		b.unlock()
+
 	}()
+
 }
 
 //Start bootstrapping
-func (b *Bootstrap) Start() {
+func (b *Bootstrap) bootstrap() []error {
+
+	c := make(chan struct{})
+
+	var errorStack []error
+
+	for _, v := range b.bootstrapPeers {
+
+		go func() {
+			if b.amountConnPeers() < b.minPeers {
+				ctx := context.Background()
+				err := b.host.Connect(ctx, *v)
+				if err != nil {
+					errorStack = append(errorStack, err)
+				}
+				fmt.Println("connected to: ", v)
+				c <- struct{}{}
+				return
+			}
+			c <- struct{}{}
+		}()
+
+		<-c
+
+	}
+
+	return nil
+
+}
+
+//Start bootstrapping
+func (b *Bootstrap) Start(bootstrapInterval time.Duration) {
+
+	b.bootstrapInterval = bootstrapInterval
 
 	//Listener
 	notifyBundle := NotifyBundle{
 		DisconnectedF: func(network net.Network, conn net.Conn) {
 			fmt.Println("Dropped connnection to peer: ", conn.RemotePeer().String())
-			//Only bootstrap when we are currently not bootstrapping
-			if b.locked() == false {
-				b.bootstrap()
+			if b.isInterfaceListenerLocked() == false {
+				b.networkInterfaceListener()
 			}
 		},
 	}
@@ -108,7 +153,12 @@ func (b *Bootstrap) Start() {
 	//Register listener to react on dropped connections
 	b.host.Network().Notify(&notifyBundle)
 
-	b.bootstrap()
+	if err := b.bootstrap(); err != nil {
+		//In case we fail to start,
+		//Register network interface listener
+		b.networkInterfaceListener()
+	}
+
 }
 
 //Create new bootstrap service
@@ -140,6 +190,7 @@ func NewBootstrap(h host.Host, bootstrapPeers []string, minPeers int) (error, Bo
 		minPeers:       minPeers,
 		bootstrapPeers: peers,
 		host:           h,
+		interfaceListenerLocked: false,
 	}
 
 }
