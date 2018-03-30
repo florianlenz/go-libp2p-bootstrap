@@ -53,7 +53,7 @@ func (b *Bootstrap) unlock() {
 }
 
 //Start bootstrapping
-func (b *Bootstrap) bootstrapp() {
+func (b *Bootstrap) bootstrap() {
 
 	//Lock bootstrapping
 	b.lock()
@@ -98,9 +98,9 @@ func (b *Bootstrap) Start() {
 	notifyBundle := NotifyBundle{
 		DisconnectedF: func(network net.Network, conn net.Conn) {
 			fmt.Println("Dropped connnection to peer: ", conn.RemotePeer().String())
-			//Only bootstrapp when we are currently not bootstrapping
+			//Only bootstrap when we are currently not bootstrapping
 			if b.locked() == false {
-				b.bootstrapp()
+				b.bootstrap()
 			}
 		},
 	}
@@ -108,10 +108,10 @@ func (b *Bootstrap) Start() {
 	//Register listener to react on dropped connections
 	b.host.Network().Notify(&notifyBundle)
 
-	b.bootstrapp()
+	b.bootstrap()
 }
 
-//Create new bootstrapper
+//Create new bootstrap service
 func NewBootstrap(h host.Host, bootstrapPeers []string, minPeers int) (error, Bootstrap) {
 
 	if minPeers > len(bootstrapPeers) {

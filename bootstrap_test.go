@@ -2,8 +2,7 @@ package bootstrap
 
 import (
 	"context"
-	"gx/ipfs/QmXGfPjhnro8tgANHDUg4gGgLGYnAz1zcDPAgNeUkzbsN1/go-libp2p"
-	"reflect"
+	"github.com/libp2p/go-libp2p"
 	"testing"
 )
 
@@ -33,7 +32,7 @@ func TestNewBootstrap(t *testing.T) {
 		t.Error(err)
 	}
 
-	if false == reflect.DeepEqual(bootstrap.bootstrapPeers, bootstrapPeers) {
+	if len(bootstrapPeers) == len(bootstrap.bootstrapPeers) {
 		t.Errorf("Expected bootstrap peer's to equal the passed peer's")
 	}
 
