@@ -56,8 +56,6 @@ func (b *Bootstrap) networkInterfaceListener() {
 	//Lock down the interface listener
 	b.lockInterfaceListener()
 
-	breakLoop := false
-
 	//Get multi addresses
 	mas, err := b.host.Network().InterfaceListenAddresses()
 
@@ -70,12 +68,6 @@ func (b *Bootstrap) networkInterfaceListener() {
 	go func() {
 
 		for {
-
-			//Exit the network listener
-			if breakLoop == true {
-				b.unlockInterfaceListener()
-				break
-			}
 
 			//Get addresses
 			mas, err := b.host.Network().InterfaceListenAddresses()
@@ -91,7 +83,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 
 				//We can un register the handler when we are connected to enought peer's
 				if len(b.host.Network().Peers()) >= b.minPeers {
-					breakLoop = true
+					break
 				}
 
 			}
