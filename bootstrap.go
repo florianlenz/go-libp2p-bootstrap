@@ -96,7 +96,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 
 			}
 
-			time.Sleep(time.Second * 2)
+			time.Sleep(b.bootstrapInterval)
 
 		}
 
