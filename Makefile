@@ -1,6 +1,7 @@
 deps:
 	go get -u github.com/whyrusleeping/gx
 	go get -u github.com/whyrusleeping/gx-go
+	go get -u github.com/stretchr/testify/require
 install:
 	gx install
 	go get ./...
