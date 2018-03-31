@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/libp2p/go-libp2p"
 	"testing"
+
+	require "github.com/stretchr/testify/require"
 )
 
 var bootstrapPeers = []string{
@@ -22,22 +24,64 @@ func TestNewBootstrap(t *testing.T) {
 
 	ctx := context.Background()
 	h, err := libp2p.New(ctx)
-	if err != nil {
-		t.Error(err)
-	}
+	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	require.Nil(t, err)
 
-	if err != nil {
-		t.Error(err)
-	}
+	require.Equal(t, len(bootstrapPeers), len(bootstrap.bootstrapPeers))
+	require.Equal(t, 4, bootstrap.minPeers)
 
-	if len(bootstrapPeers) == len(bootstrap.bootstrapPeers) {
-		t.Errorf("Expected bootstrap peer's to equal the passed peer's")
-	}
+}
 
-	if bootstrap.minPeers != 4 {
-		t.Errorf("Expected minPeers to equal the passed in amount")
-	}
+func TestLockInterfaceListener(t *testing.T) {
 
+	ctx := context.Background()
+	h, err := libp2p.New(ctx)
+	require.Nil(t, err)
+
+	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	require.Nil(t, err)
+
+	//isInterfaceListenerLocked should be false as a default
+	require.False(t, bootstrap.isInterfaceListenerLocked())
+	//Lock the interface listener
+	bootstrap.lockInterfaceListener()
+	//isInterfaceListenerLocked should be true since we locked it
+	require.True(t, bootstrap.isInterfaceListenerLocked())
+
+}
+
+func TestLockInterfaceListenerError(t *testing.T) {
+
+	ctx := context.Background()
+	h, err := libp2p.New(ctx)
+	require.Nil(t, err)
+
+	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	require.Nil(t, err)
+
+	require.Panics(t, func() {
+		bootstrap.lockInterfaceListener()
+		//Second lock should panic since
+		//we need to unlock before we lock again
+		bootstrap.lockInterfaceListener()
+	})
+
+}
+
+func TestUnlockInterfaceListenerError(t *testing.T) {
+	ctx := context.Background()
+	h, err := libp2p.New(ctx)
+	require.Nil(t, err)
+
+	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	require.Nil(t, err)
+
+	require.Panics(t, func() {
+		bootstrap.unlockInterfaceListener()
+		//Second lock should panic since
+		//we need to unlock before we lock again
+		bootstrap.unlockInterfaceListener()
+	})
 }
