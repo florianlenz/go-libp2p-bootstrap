@@ -22,9 +22,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmXGfPjhnro8tgANHDUg4gGgLGYnAz1zcDPAgNeUkzbsN1",
+      "hash": "QmXZUgiMTgYGEKazHbxYfghCWzvwWfZwBYNHRPEWh4D54y",
       "name": "go-libp2p",
-      "version": "5.0.15"
+      "version": "5.0.16"
     }
   ],
   "gxVersion": "0.12.1",
