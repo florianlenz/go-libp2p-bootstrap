@@ -4,7 +4,6 @@ deps:
 	go get -u github.com/stretchr/testify/require
 install:
 	gx install
-	go get ./...
 deps_hack:
 	gx-go rewrite
 deps_hack_revert:
