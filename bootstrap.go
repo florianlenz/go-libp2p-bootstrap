@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ipfs/go-ipfs-addr"
-	"github.com/libp2p/go-libp2p-host"
-	"github.com/libp2p/go-libp2p-net"
-	"github.com/libp2p/go-libp2p-peerstore"
+	"gx/ipfs/QmNmJZL7FQySMtE2BQuLMuZg2EB2CLEunJJUSVSc9YnnbV/go-libp2p-host"
+	"gx/ipfs/QmQViVWBHbU6HmYjXcdNq7tVASCNgdg64ZGcauuDkLCivW/go-ipfs-addr"
+	"gx/ipfs/QmXauCuJzmzapetmC6W4TuDJLL1yFFrVzSHoWv8YdbmnxH/go-libp2p-peerstore"
+	"gx/ipfs/QmRQX1yaPQFynWkByKcQTPpy3uC21oXZ5X32KEcLZnefz8/go-libp2p-net"
 	"time"
 )
 
