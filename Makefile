@@ -1,5 +1,6 @@
 deps:
 	go get -u github.com/whyrusleeping/gx
+	go get -u github.com/whyrusleeping/gx-go
 install:
 	gx install
 	go get ./...
