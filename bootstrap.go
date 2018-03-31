@@ -15,7 +15,7 @@ type Bootstrap struct {
 	minPeers                int
 	bootstrapPeers          []*peerstore.PeerInfo
 	host                    host.Host
-	notifiee                *NotifyBundle
+	notifiee                *net.NotifyBundle
 	interfaceListenerLocked bool
 	bootstrapInterval       time.Duration
 }
@@ -133,7 +133,7 @@ func (b *Bootstrap) Start(bootstrapInterval time.Duration) {
 	b.bootstrapInterval = bootstrapInterval
 
 	//Listener
-	notifyBundle := NotifyBundle{
+	notifyBundle := net.NotifyBundle{
 		DisconnectedF: func(network net.Network, conn net.Conn) {
 			fmt.Println("Dropped connnection to peer: ", conn.RemotePeer().String())
 			if b.isInterfaceListenerLocked() == false {
