@@ -10,3 +10,5 @@ deps_hack_revert:
 	gx-go uw
 test:
 	go test -cover
+test_cover:
+	go test -coverprofile=c.out && go tool cover -html=c.out
