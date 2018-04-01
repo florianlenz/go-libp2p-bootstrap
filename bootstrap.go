@@ -111,7 +111,10 @@ func (b *Bootstrap) bootstrap() []error {
 				ctx := context.Background()
 				err := b.host.Connect(ctx, *v)
 				if err != nil {
+					fmt.Println("Failed to connect to: ", v)
 					errorStack = append(errorStack, err)
+					c <- struct{}{}
+					return
 				}
 				fmt.Println("connected to: ", v)
 				c <- struct{}{}
