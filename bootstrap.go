@@ -54,41 +54,46 @@ func (b *Bootstrap) amountConnPeers() int {
 //Register a network state change handler
 func (b *Bootstrap) networkInterfaceListener() {
 
+	//Only register listener when we are connected
+	//to too less peer's
+	if b.amountConnPeers() >= b.minPeers {
+		return
+	}
+
 	//Lock down the interface listener
+	//to prevent a second listener registration
 	b.lockInterfaceListener()
 
-	//Get multi addresses
+	//Register latest network state
 	mas, err := b.host.Network().InterfaceListenAddresses()
-
 	if err != nil {
 		panic(err)
 	}
-
 	lastNetworkState := len(mas)
 
 	go func() {
 
 		for {
 
-			//Get addresses
+			//Get current network state
 			mas, err := b.host.Network().InterfaceListenAddresses()
-
 			if err != nil {
 				panic(err)
 			}
 
-			//Bootstrap on address delta
+			//Bootstrap on network delta (delta between the amount of addresses)
 			if len(mas) != lastNetworkState {
 				lastNetworkState = len(mas)
 				b.bootstrap()
 
-				//We can un register the handler when we are connected to enought peer's
+				//We can un register the handler when we are connected to enough peer's
 				if len(b.host.Network().Peers()) >= b.minPeers {
 					break
 				}
 
 			}
 
+			//Pause before we continue the dial attempts
 			time.Sleep(b.bootstrapInterval)
 
 		}

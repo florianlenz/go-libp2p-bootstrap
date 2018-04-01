@@ -78,10 +78,35 @@ func TestUnlockInterfaceListenerError(t *testing.T) {
 	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
 	require.Nil(t, err)
 
+	bootstrap.lockInterfaceListener()
+
 	require.Panics(t, func() {
-		bootstrap.unlockInterfaceListener()
 		//Second lock should panic since
 		//we need to unlock before we lock again
 		bootstrap.unlockInterfaceListener()
+		bootstrap.unlockInterfaceListener()
 	})
+
+}
+
+func TestAmountOfConnectedPeers(t *testing.T) {
+
+	//Create host object
+	ctx := context.Background()
+	h, err := libp2p.New(ctx)
+	require.Nil(t, err)
+
+	//Create bootstrap object
+	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	require.Nil(t, err)
+
+	//amount of connected peer's should be 0 since we didn't dial till now
+	require.Equal(t, 0, bootstrap.amountConnPeers())
+
+	//Start bootstrap process
+	bootstrap.Start(1)
+
+	//After we bootstrapped successfully we should be connected to one peer
+	require.Equal(t, 1, bootstrap.amountConnPeers())
+
 }
