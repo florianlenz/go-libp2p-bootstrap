@@ -124,7 +124,7 @@ func (b *Bootstrap) bootstrap() []error {
 
 	}
 
-	return nil
+	return errorStack
 
 }
 
