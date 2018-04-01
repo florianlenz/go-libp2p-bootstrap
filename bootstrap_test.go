@@ -23,7 +23,7 @@ var bootstrapPeers = []string{
 func TestNewBootstrap(t *testing.T) {
 
 	ctx := context.Background()
-	h, err := libp2p.New(ctx)
+	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
@@ -37,7 +37,7 @@ func TestNewBootstrap(t *testing.T) {
 func TestLockInterfaceListener(t *testing.T) {
 
 	ctx := context.Background()
-	h, err := libp2p.New(ctx)
+	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
@@ -55,7 +55,7 @@ func TestLockInterfaceListener(t *testing.T) {
 func TestLockInterfaceListenerError(t *testing.T) {
 
 	ctx := context.Background()
-	h, err := libp2p.New(ctx)
+	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
@@ -72,7 +72,7 @@ func TestLockInterfaceListenerError(t *testing.T) {
 
 func TestUnlockInterfaceListenerError(t *testing.T) {
 	ctx := context.Background()
-	h, err := libp2p.New(ctx)
+	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
@@ -93,7 +93,7 @@ func TestAmountOfConnectedPeers(t *testing.T) {
 
 	//Create host object
 	ctx := context.Background()
-	h, err := libp2p.New(ctx)
+	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
 	//Create bootstrap object

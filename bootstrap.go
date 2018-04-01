@@ -98,6 +98,11 @@ func (b *Bootstrap) networkInterfaceListener() {
 
 		}
 
+		//Time to unlock the interface listener
+		//since the for loop will only be "done"
+		//when we are connected to enough peer's
+		b.unlockInterfaceListener()
+
 	}()
 
 }
