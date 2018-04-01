@@ -1,4 +1,5 @@
 # LibP2P Bootstrap bundle
+[![Build Status](https://semaphoreci.com/api/v1/florianlenz/go-libp2p-bootstrap/branches/master/badge.svg)](https://semaphoreci.com/florianlenz/go-libp2p-bootstrap)
 
 ## Install
 
