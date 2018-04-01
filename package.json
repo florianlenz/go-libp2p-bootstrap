@@ -15,16 +15,16 @@
       "version": "1.4.15"
     },
     {
-      "author": "why",
-      "hash": "QmQViVWBHbU6HmYjXcdNq7tVASCNgdg64ZGcauuDkLCivW",
-      "name": "go-ipfs-addr",
-      "version": "0.1.7"
-    },
-    {
       "author": "whyrusleeping",
       "hash": "QmXZUgiMTgYGEKazHbxYfghCWzvwWfZwBYNHRPEWh4D54y",
       "name": "go-libp2p",
       "version": "5.0.16"
+    },
+    {
+      "author": "multiformats",
+      "hash": "QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb",
+      "name": "go-multiaddr",
+      "version": "1.2.6"
     }
   ],
   "gxVersion": "0.12.1",

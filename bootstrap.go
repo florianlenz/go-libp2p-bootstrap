@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	addr "github.com/ipfs/go-ipfs-addr"
 	host "github.com/libp2p/go-libp2p-host"
 	net "github.com/libp2p/go-libp2p-net"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 type Bootstrap struct {
@@ -167,13 +167,13 @@ func NewBootstrap(h host.Host, bootstrapPeers []string, minPeers int) (error, Bo
 	var peers []*peerstore.PeerInfo
 
 	for _, v := range bootstrapPeers {
-		iAddr, err := addr.ParseString(v)
+		addr, err := ma.NewMultiaddr(v)
 
 		if err != nil {
 			return err, Bootstrap{}
 		}
 
-		pInfo, err := peerstore.InfoFromP2pAddr(iAddr.Multiaddr())
+		pInfo, err := peerstore.InfoFromP2pAddr(addr)
 
 		if err != nil {
 			return err, Bootstrap{}
