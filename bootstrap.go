@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ipfs/go-ipfs-addr"
-	"github.com/libp2p/go-libp2p-host"
-	"github.com/libp2p/go-libp2p-net"
-	"github.com/libp2p/go-libp2p-peerstore"
 	"time"
+
+	addr "github.com/ipfs/go-ipfs-addr"
+	host "github.com/libp2p/go-libp2p-host"
+	net "github.com/libp2p/go-libp2p-net"
+	peerstore "github.com/libp2p/go-libp2p-peerstore"
 )
 
 type Bootstrap struct {
@@ -163,7 +164,7 @@ func NewBootstrap(h host.Host, bootstrapPeers []string, minPeers int) (error, Bo
 	var peers []*peerstore.PeerInfo
 
 	for _, v := range bootstrapPeers {
-		iAddr, err := ipfsaddr.ParseString(v)
+		iAddr, err := addr.ParseString(v)
 
 		if err != nil {
 			return err, Bootstrap{}

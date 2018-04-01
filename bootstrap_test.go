@@ -2,9 +2,9 @@ package bootstrap
 
 import (
 	"context"
-	"github.com/libp2p/go-libp2p"
 	"testing"
 
+	libp2p "github.com/libp2p/go-libp2p"
 	require "github.com/stretchr/testify/require"
 )
 
