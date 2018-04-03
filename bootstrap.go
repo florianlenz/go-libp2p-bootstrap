@@ -51,6 +51,7 @@ func (b *Bootstrap) isInterfaceListenerLocked() bool {
 
 //Get the amount of peer's we are connected to
 func (b *Bootstrap) amountConnPeers() int {
+	logger.Debug("Amount of connected peer's: ", len(b.host.Network().Peers()))
 	return len(b.host.Network().Peers())
 }
 
@@ -59,7 +60,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 
 	//Only register listener when we are connected
 	//to too less peer's
-	if b.amountConnPeers() < b.minPeers {
+	if b.amountConnPeers() >= b.minPeers {
 		return
 	}
 
@@ -73,6 +74,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 		panic(err)
 	}
 	lastNetworkState := len(mas)
+	logger.Debug("Addresses at install time: ", lastNetworkState)
 
 	go func() {
 
@@ -99,11 +101,13 @@ func (b *Bootstrap) networkInterfaceListener() {
 			//Pause before we continue with bootstrap attempts
 			time.Sleep(b.bootstrapInterval)
 
+			logger.Debug("Next listener round after: ", b.bootstrapInterval)
 		}
 
 		//Time to unlock the interface listener
 		//since the for loop will only be "done"
 		//when we are connected to enough peer's
+		logger.Debug("Free network interface listener")
 		b.unlockInterfaceListener()
 
 	}()
