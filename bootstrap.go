@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"time"
 
+	log "github.com/ipfs/go-log"
 	host "github.com/libp2p/go-libp2p-host"
 	net "github.com/libp2p/go-libp2p-net"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 )
+
+var logger = log.Logger("bootstrap")
 
 type Bootstrap struct {
 	minPeers                int
@@ -56,7 +59,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 
 	//Only register listener when we are connected
 	//to too less peer's
-	if b.amountConnPeers() >= b.minPeers {
+	if b.amountConnPeers() < b.minPeers {
 		return
 	}
 
@@ -93,7 +96,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 
 			}
 
-			//Pause before we continue the dial attempts
+			//Pause before we continue with bootstrap attempts
 			time.Sleep(b.bootstrapInterval)
 
 		}
@@ -121,12 +124,12 @@ func (b *Bootstrap) bootstrap() []error {
 				ctx := context.Background()
 				err := b.host.Connect(ctx, *v)
 				if err != nil {
-					fmt.Println("Failed to connect to: ", v)
+					logger.Debug("Failed to connect to peer: ", v)
 					errorStack = append(errorStack, err)
 					c <- struct{}{}
 					return
 				}
-				fmt.Println("connected to: ", v)
+				logger.Debug("Connected to: ", v)
 				c <- struct{}{}
 				return
 			}
@@ -149,8 +152,9 @@ func (b *Bootstrap) Start(bootstrapInterval time.Duration) {
 	//Listener
 	notifyBundle := net.NotifyBundle{
 		DisconnectedF: func(network net.Network, conn net.Conn) {
-			fmt.Println("Dropped connnection to peer: ", conn.RemotePeer().String())
+			logger.Debug("Dropped connection to peer: ", conn.RemotePeer())
 			if b.isInterfaceListenerLocked() == false {
+				logger.Debug("Install network interface listener")
 				b.networkInterfaceListener()
 			}
 		},
