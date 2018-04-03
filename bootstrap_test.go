@@ -110,3 +110,25 @@ func TestAmountOfConnectedPeers(t *testing.T) {
 	require.Equal(t, 1, bootstrap.amountConnPeers())
 
 }
+
+func TestNetworkInterfaceListener(t *testing.T) {
+	//Create host object
+	ctx := context.Background()
+	h, err := libp2p.New(ctx, libp2p.Defaults)
+	require.Nil(t, err)
+
+	//Create bootstrap object
+	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	require.Nil(t, err)
+
+	//Expect interface listener locked since we didn't
+	//start the networkInterfaceListener()
+	require.Equal(t, false, bootstrap.interfaceListenerLocked)
+
+	//Register network interface listener
+	bootstrap.networkInterfaceListener()
+
+	//After we registered the network interface listener
+	//the interface listener should be locked
+	require.Equal(t, true, bootstrap.interfaceListenerLocked)
+}
