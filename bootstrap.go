@@ -90,12 +90,11 @@ func (b *Bootstrap) networkInterfaceListener() {
 			if len(mas) != lastNetworkState {
 				lastNetworkState = len(mas)
 				b.bootstrap()
+			}
 
-				//We can un register the handler when we are connected to enough peer's
-				if len(b.host.Network().Peers()) >= b.minPeers {
-					break
-				}
-
+			//We can un register the handler when we are connected to enough peer's
+			if len(b.host.Network().Peers()) >= b.minPeers {
+				break
 			}
 
 			//Pause before we continue with bootstrap attempts
