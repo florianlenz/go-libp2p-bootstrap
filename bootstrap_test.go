@@ -166,7 +166,7 @@ func TestNetworkInterfaceListener(t *testing.T) {
 	require.Equal(t, true, bootstrap.interfaceListenerLocked)
 }
 
-func TestStart(t *testing.T) {
+func TestStartError(t *testing.T) {
 
 	//Create host object
 	ctx := context.Background()
@@ -189,7 +189,7 @@ func TestStart(t *testing.T) {
 
 }
 
-func TestStop(t *testing.T) {
+func TestStopError(t *testing.T) {
 	//Create host object
 	ctx := context.Background()
 	h, err := libp2p.New(ctx, libp2p.Defaults)
@@ -208,4 +208,27 @@ func TestStop(t *testing.T) {
 
 	err = bootstrap.Stop()
 	require.Equal(t, "bootstrap must be started in order to stop it", err.Error())
+
+}
+
+func TestStartStop(t *testing.T) {
+	//Create host object
+	ctx := context.Background()
+	h, err := libp2p.New(ctx, libp2p.Defaults)
+	require.Nil(t, err)
+
+	//Create bootstrap object
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: 1,
+		hardBootstrap:     2,
+	})
+	require.Nil(t, err)
+
+	//Just start and stop and start and stop
+	require.Nil(t, bootstrap.Start())
+	require.Nil(t, bootstrap.Stop())
+	require.Nil(t, bootstrap.Start())
+	require.Nil(t, bootstrap.Stop())
 }
