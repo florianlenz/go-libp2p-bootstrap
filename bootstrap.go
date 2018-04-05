@@ -19,10 +19,10 @@ var logger = log.Logger("bootstrap")
 //The hardBootstrap should be at least 20 times higher than
 //the bootstrapInterval.
 type Config struct {
-	bootstrapPeers    []string
-	minPeers          int
-	bootstrapInterval time.Duration
-	hardBootstrap     time.Duration
+	BootstrapPeers    []string
+	MinPeers          int
+	BootstrapInterval time.Duration
+	HardBootstrap     time.Duration
 }
 
 type Bootstrap struct {
@@ -226,13 +226,13 @@ func (b *Bootstrap) Start() error {
 //Create new bootstrap service
 func NewBootstrap(h host.Host, c Config) (error, Bootstrap) {
 
-	if c.minPeers > len(c.bootstrapPeers) {
-		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.minPeers, len(c.bootstrapPeers))), Bootstrap{}
+	if c.MinPeers > len(c.BootstrapPeers) {
+		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), Bootstrap{}
 	}
 
 	var peers []*peerstore.PeerInfo
 
-	for _, v := range c.bootstrapPeers {
+	for _, v := range c.BootstrapPeers {
 		addr, err := ma.NewMultiaddr(v)
 
 		if err != nil {
@@ -249,11 +249,11 @@ func NewBootstrap(h host.Host, c Config) (error, Bootstrap) {
 	}
 
 	return nil, Bootstrap{
-		minPeers:                c.minPeers,
+		minPeers:                c.MinPeers,
 		bootstrapPeers:          peers,
 		host:                    h,
-		hardBootstrap:           c.hardBootstrap,
-		bootstrapInterval:       c.bootstrapInterval,
+		hardBootstrap:           c.HardBootstrap,
+		bootstrapInterval:       c.BootstrapInterval,
 		interfaceListenerLocked: false,
 		started:                 false,
 	}
