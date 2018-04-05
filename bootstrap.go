@@ -22,6 +22,7 @@ type Bootstrap struct {
 	notifiee                *net.NotifyBundle
 	interfaceListenerLocked bool
 	bootstrapInterval       time.Duration
+	hardBootstrap           time.Duration
 }
 
 //Lock the interface listener
@@ -74,11 +75,18 @@ func (b *Bootstrap) networkInterfaceListener() {
 		panic(err)
 	}
 	lastNetworkState := len(mas)
+	now := time.Now()
 	logger.Debug("Addresses at install time: ", lastNetworkState)
 
 	go func() {
 
 		for {
+			//After x we want to do a hard bootstrap
+			if time.Now().After(now.Add(b.hardBootstrap)) {
+				logger.Debug("Hard bootstrap")
+				b.bootstrap()
+				now = time.Now()
+			}
 
 			//Get current network state
 			mas, err := b.host.Network().InterfaceListenAddresses()
@@ -148,9 +156,10 @@ func (b *Bootstrap) bootstrap() []error {
 }
 
 //Start bootstrapping
-func (b *Bootstrap) Start(bootstrapInterval time.Duration) {
+func (b *Bootstrap) Start(bootstrapInterval time.Duration, hardBootstrap time.Duration) {
 
 	b.bootstrapInterval = bootstrapInterval
+	b.hardBootstrap = hardBootstrap
 
 	//Listener
 	notifyBundle := net.NotifyBundle{
