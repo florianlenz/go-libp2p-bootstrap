@@ -16,6 +16,8 @@ import (
 var logger = log.Logger("bootstrap")
 
 //Bootstrap configuration
+//The hardBootstrap should be at least 20 times higher than
+//the bootstrapInterval.
 type Config struct {
 	bootstrapPeers    []string
 	minPeers          int
@@ -97,7 +99,9 @@ func (b *Bootstrap) networkInterfaceListener() {
 				break
 			}
 
-			//After x we want to do a hard bootstrap
+			//After x we want to do a hard bootstrap.
+			//Hard bootstrap mean's that we bypass the
+			//check for an delta on the addresses and try to bootstrap
 			if time.Now().After(now.Add(b.hardBootstrap)) {
 				logger.Debug("Hard bootstrap")
 				b.Bootstrap()
@@ -177,6 +181,7 @@ func (b *Bootstrap) Bootstrap() []error {
 
 }
 
+//Stop the bootstrap service
 func (b *Bootstrap) Stop() error {
 	if b.started == false {
 		return errors.New("bootstrap must be started in order to stop it")

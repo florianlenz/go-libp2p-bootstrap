@@ -3,6 +3,11 @@
 
 ## Install
 
+1. You first need to import the project by running `gx import HASH`. The latest version can be found in the `.gx/lastpubver`.
+2. Import it as you are used to and don't forget the use `gx-go rw` to replace the import path of the repo with the local path.
+
+## Development
+
 1. Clone this repo
 2. Run `make deps`
 3. Run `make install`
