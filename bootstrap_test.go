@@ -27,11 +27,18 @@ func TestNewBootstrap(t *testing.T) {
 	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: time.Second * 2,
+		hardBootstrap:     time.Second * 5,
+	})
 	require.Nil(t, err)
 
 	require.Equal(t, len(bootstrapPeers), len(bootstrap.bootstrapPeers))
 	require.Equal(t, 4, bootstrap.minPeers)
+	require.Equal(t, time.Second*2, bootstrap.bootstrapInterval)
+	require.Equal(t, time.Second*5, bootstrap.hardBootstrap)
 
 }
 
@@ -41,7 +48,12 @@ func TestLockInterfaceListener(t *testing.T) {
 	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: 1,
+		hardBootstrap:     3,
+	})
 	require.Nil(t, err)
 
 	//isInterfaceListenerLocked should be false as a default
@@ -59,7 +71,12 @@ func TestLockInterfaceListenerError(t *testing.T) {
 	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: 1,
+		hardBootstrap:     3,
+	})
 	require.Nil(t, err)
 
 	require.Panics(t, func() {
@@ -76,7 +93,12 @@ func TestUnlockInterfaceListenerError(t *testing.T) {
 	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 4)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: 1,
+		hardBootstrap:     3,
+	})
 	require.Nil(t, err)
 
 	bootstrap.lockInterfaceListener()
@@ -98,14 +120,19 @@ func TestAmountOfConnectedPeers(t *testing.T) {
 	require.Nil(t, err)
 
 	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          1,
+		bootstrapInterval: time.Second * 1,
+		hardBootstrap:     time.Second * 10,
+	})
 	require.Nil(t, err)
 
 	//amount of connected peer's should be 0 since we didn't dial till now
 	require.Equal(t, 0, bootstrap.amountConnPeers())
 
 	//Start bootstrap process
-	bootstrap.Start(time.Second*1, time.Second*10)
+	bootstrap.Start()
 
 	//After we bootstrapped successfully we should be connected to one peer
 	require.Equal(t, 1, bootstrap.amountConnPeers())
@@ -119,7 +146,12 @@ func TestNetworkInterfaceListener(t *testing.T) {
 	require.Nil(t, err)
 
 	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: time.Second * 1,
+		hardBootstrap:     time.Second * 10,
+	})
 	require.Nil(t, err)
 
 	//Expect interface listener locked since we didn't
@@ -142,13 +174,18 @@ func TestStart(t *testing.T) {
 	require.Nil(t, err)
 
 	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: 1,
+		hardBootstrap:     2,
+	})
 	require.Nil(t, err)
 
 	bootstrap.started = true
 
-	err = bootstrap.Start(1, 2)
-	require.Equal(t, "Already started", err.Error())
+	err = bootstrap.Start()
+	require.Equal(t, "already started", err.Error())
 
 }
 
@@ -159,11 +196,16 @@ func TestStop(t *testing.T) {
 	require.Nil(t, err)
 
 	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	err, bootstrap := NewBootstrap(h, Config{
+		bootstrapPeers:    bootstrapPeers,
+		minPeers:          4,
+		bootstrapInterval: 1,
+		hardBootstrap:     2,
+	})
 	require.Nil(t, err)
 
 	bootstrap.started = false
 
 	err = bootstrap.Stop()
-	require.Equal(t, "Bootstrap must be started in order to stop it.", err.Error())
+	require.Equal(t, "bootstrap must be started in order to stop it", err.Error())
 }

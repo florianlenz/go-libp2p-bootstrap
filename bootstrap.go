@@ -15,6 +15,14 @@ import (
 
 var logger = log.Logger("bootstrap")
 
+//Bootstrap configuration
+type Config struct {
+	bootstrapPeers    []string
+	minPeers          int
+	bootstrapInterval time.Duration
+	hardBootstrap     time.Duration
+}
+
 type Bootstrap struct {
 	minPeers                int
 	bootstrapPeers          []*peerstore.PeerInfo
@@ -92,7 +100,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 			//After x we want to do a hard bootstrap
 			if time.Now().After(now.Add(b.hardBootstrap)) {
 				logger.Debug("Hard bootstrap")
-				b.bootstrap()
+				b.Bootstrap()
 				now = time.Now()
 			}
 
@@ -105,7 +113,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 			//Bootstrap on network delta (delta between the amount of addresses)
 			if len(mas) != lastNetworkState {
 				lastNetworkState = len(mas)
-				b.bootstrap()
+				b.Bootstrap()
 			}
 
 			//We can un register the handler when we are connected to enough peer's
@@ -130,7 +138,13 @@ func (b *Bootstrap) networkInterfaceListener() {
 }
 
 //Start bootstrapping
-func (b *Bootstrap) bootstrap() []error {
+func (b *Bootstrap) Bootstrap() []error {
+
+	if b.started == false {
+		return []error{
+			errors.New("you need to to call Start() first in order to manually bootstrap"),
+		}
+	}
 
 	c := make(chan struct{})
 
@@ -165,7 +179,7 @@ func (b *Bootstrap) bootstrap() []error {
 
 func (b *Bootstrap) Stop() error {
 	if b.started == false {
-		return errors.New("Bootstrap must be started in order to stop it.")
+		return errors.New("bootstrap must be started in order to stop it")
 	}
 
 	b.host.Network().StopNotify(b.notifiee)
@@ -174,15 +188,12 @@ func (b *Bootstrap) Stop() error {
 }
 
 //Start bootstrapping
-func (b *Bootstrap) Start(bootstrapInterval time.Duration, hardBootstrap time.Duration) error {
+func (b *Bootstrap) Start() error {
 
 	if b.started == true {
-		return errors.New("Already started")
+		return errors.New("already started")
 	}
 	b.started = true
-
-	b.bootstrapInterval = bootstrapInterval
-	b.hardBootstrap = hardBootstrap
 
 	//Listener
 	notifyBundle := net.NotifyBundle{
@@ -198,7 +209,7 @@ func (b *Bootstrap) Start(bootstrapInterval time.Duration, hardBootstrap time.Du
 	//Register listener to react on dropped connections
 	b.host.Network().Notify(&notifyBundle)
 
-	if err := b.bootstrap(); err != nil {
+	if errors := b.Bootstrap(); len(errors) != 0 {
 		//In case we fail to start,
 		//Register network interface listener
 		b.networkInterfaceListener()
@@ -208,15 +219,15 @@ func (b *Bootstrap) Start(bootstrapInterval time.Duration, hardBootstrap time.Du
 }
 
 //Create new bootstrap service
-func NewBootstrap(h host.Host, bootstrapPeers []string, minPeers int) (error, Bootstrap) {
+func NewBootstrap(h host.Host, c Config) (error, Bootstrap) {
 
-	if minPeers > len(bootstrapPeers) {
-		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", minPeers, len(bootstrapPeers))), Bootstrap{}
+	if c.minPeers > len(c.bootstrapPeers) {
+		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.minPeers, len(c.bootstrapPeers))), Bootstrap{}
 	}
 
 	var peers []*peerstore.PeerInfo
 
-	for _, v := range bootstrapPeers {
+	for _, v := range c.bootstrapPeers {
 		addr, err := ma.NewMultiaddr(v)
 
 		if err != nil {
@@ -233,10 +244,13 @@ func NewBootstrap(h host.Host, bootstrapPeers []string, minPeers int) (error, Bo
 	}
 
 	return nil, Bootstrap{
-		minPeers:       minPeers,
-		bootstrapPeers: peers,
-		host:           h,
+		minPeers:                c.minPeers,
+		bootstrapPeers:          peers,
+		host:                    h,
+		hardBootstrap:           c.hardBootstrap,
+		bootstrapInterval:       c.bootstrapInterval,
 		interfaceListenerLocked: false,
+		started:                 false,
 	}
 
 }
