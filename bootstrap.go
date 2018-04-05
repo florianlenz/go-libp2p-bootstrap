@@ -23,6 +23,7 @@ type Bootstrap struct {
 	interfaceListenerLocked bool
 	bootstrapInterval       time.Duration
 	hardBootstrap           time.Duration
+	started                 bool
 }
 
 //Lock the interface listener
@@ -81,6 +82,13 @@ func (b *Bootstrap) networkInterfaceListener() {
 	go func() {
 
 		for {
+
+			//In case bootstrapping is stopped
+			//we want to exit
+			if b.started == false {
+				break
+			}
+
 			//After x we want to do a hard bootstrap
 			if time.Now().After(now.Add(b.hardBootstrap)) {
 				logger.Debug("Hard bootstrap")
@@ -155,8 +163,23 @@ func (b *Bootstrap) bootstrap() []error {
 
 }
 
+func (b *Bootstrap) Stop() error {
+	if b.started == false {
+		return errors.New("Bootstrap must be started in order to stop it.")
+	}
+
+	b.host.Network().StopNotify(b.notifiee)
+	b.started = false
+	return nil
+}
+
 //Start bootstrapping
-func (b *Bootstrap) Start(bootstrapInterval time.Duration, hardBootstrap time.Duration) {
+func (b *Bootstrap) Start(bootstrapInterval time.Duration, hardBootstrap time.Duration) error {
+
+	if b.started == true {
+		return errors.New("Already started")
+	}
+	b.started = true
 
 	b.bootstrapInterval = bootstrapInterval
 	b.hardBootstrap = hardBootstrap
@@ -181,6 +204,7 @@ func (b *Bootstrap) Start(bootstrapInterval time.Duration, hardBootstrap time.Du
 		b.networkInterfaceListener()
 	}
 
+	return nil
 }
 
 //Create new bootstrap service

@@ -6,6 +6,7 @@ import (
 
 	libp2p "github.com/libp2p/go-libp2p"
 	require "github.com/stretchr/testify/require"
+	"time"
 )
 
 var bootstrapPeers = []string{
@@ -104,7 +105,7 @@ func TestAmountOfConnectedPeers(t *testing.T) {
 	require.Equal(t, 0, bootstrap.amountConnPeers())
 
 	//Start bootstrap process
-	bootstrap.Start(1)
+	bootstrap.Start(time.Second*1, time.Second*10)
 
 	//After we bootstrapped successfully we should be connected to one peer
 	require.Equal(t, 1, bootstrap.amountConnPeers())
@@ -131,4 +132,38 @@ func TestNetworkInterfaceListener(t *testing.T) {
 	//After we registered the network interface listener
 	//the interface listener should be locked
 	require.Equal(t, true, bootstrap.interfaceListenerLocked)
+}
+
+func TestStart(t *testing.T) {
+
+	//Create host object
+	ctx := context.Background()
+	h, err := libp2p.New(ctx, libp2p.Defaults)
+	require.Nil(t, err)
+
+	//Create bootstrap object
+	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	require.Nil(t, err)
+
+	bootstrap.started = true
+
+	err = bootstrap.Start(1, 2)
+	require.Equal(t, "Already started", err.Error())
+
+}
+
+func TestStop(t *testing.T) {
+	//Create host object
+	ctx := context.Background()
+	h, err := libp2p.New(ctx, libp2p.Defaults)
+	require.Nil(t, err)
+
+	//Create bootstrap object
+	err, bootstrap := NewBootstrap(h, bootstrapPeers, 1)
+	require.Nil(t, err)
+
+	bootstrap.started = false
+
+	err = bootstrap.Stop()
+	require.Equal(t, "Bootstrap must be started in order to stop it.", err.Error())
 }
