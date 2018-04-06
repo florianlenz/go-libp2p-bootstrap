@@ -28,10 +28,10 @@ func TestNewBootstrap(t *testing.T) {
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: time.Second * 2,
-		hardBootstrap:     time.Second * 5,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: time.Second * 2,
+		HardBootstrap:     time.Second * 5,
 	})
 	require.Nil(t, err)
 
@@ -49,10 +49,10 @@ func TestLockInterfaceListener(t *testing.T) {
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: 1,
-		hardBootstrap:     3,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: 1,
+		HardBootstrap:     3,
 	})
 	require.Nil(t, err)
 
@@ -72,10 +72,10 @@ func TestLockInterfaceListenerError(t *testing.T) {
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: 1,
-		hardBootstrap:     3,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: 1,
+		HardBootstrap:     3,
 	})
 	require.Nil(t, err)
 
@@ -94,10 +94,10 @@ func TestUnlockInterfaceListenerError(t *testing.T) {
 	require.Nil(t, err)
 
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: 1,
-		hardBootstrap:     3,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: 1,
+		HardBootstrap:     3,
 	})
 	require.Nil(t, err)
 
@@ -121,10 +121,10 @@ func TestAmountOfConnectedPeers(t *testing.T) {
 
 	//Create bootstrap object
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          1,
-		bootstrapInterval: time.Second * 1,
-		hardBootstrap:     time.Second * 10,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          1,
+		BootstrapInterval: time.Second * 1,
+		HardBootstrap:     time.Second * 10,
 	})
 	require.Nil(t, err)
 
@@ -147,10 +147,10 @@ func TestNetworkInterfaceListener(t *testing.T) {
 
 	//Create bootstrap object
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: time.Second * 1,
-		hardBootstrap:     time.Second * 10,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: time.Second * 1,
+		HardBootstrap:     time.Second * 10,
 	})
 	require.Nil(t, err)
 
@@ -175,10 +175,10 @@ func TestStartError(t *testing.T) {
 
 	//Create bootstrap object
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: 1,
-		hardBootstrap:     2,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: 1,
+		HardBootstrap:     2,
 	})
 	require.Nil(t, err)
 
@@ -197,10 +197,10 @@ func TestStopError(t *testing.T) {
 
 	//Create bootstrap object
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: 1,
-		hardBootstrap:     2,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: 1,
+		HardBootstrap:     2,
 	})
 	require.Nil(t, err)
 
@@ -219,10 +219,10 @@ func TestStartStop(t *testing.T) {
 
 	//Create bootstrap object
 	err, bootstrap := NewBootstrap(h, Config{
-		bootstrapPeers:    bootstrapPeers,
-		minPeers:          4,
-		bootstrapInterval: 1,
-		hardBootstrap:     2,
+		BootstrapPeers:    bootstrapPeers,
+		MinPeers:          4,
+		BootstrapInterval: 1,
+		HardBootstrap:     2,
 	})
 	require.Nil(t, err)
 
