@@ -16,9 +16,9 @@
     },
     {
       "author": "whyrusleeping",
-      "hash": "QmXZUgiMTgYGEKazHbxYfghCWzvwWfZwBYNHRPEWh4D54y",
+      "hash": "QmNh1kGFFdsPu79KNSaL4NUKUPb4Eiz4KHdMtFY6664RDp",
       "name": "go-libp2p",
-      "version": "5.0.16"
+      "version": "5.0.14"
     },
     {
       "author": "multiformats",
