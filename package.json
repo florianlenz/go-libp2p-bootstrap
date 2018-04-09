@@ -33,9 +33,10 @@
     }
   ],
   "gxVersion": "0.12.1",
+  "language": "go",
   "license": "",
   "name": "go-libp2p-bootstrap",
   "releaseCmd": "git commit -a -m \"gx publish $VERSION\"",
-  "version": "3.0.0"
+  "version": "3.0.1"
 }
 
