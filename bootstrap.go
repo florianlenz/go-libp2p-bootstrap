@@ -227,7 +227,7 @@ func (b *Bootstrap) Start() error {
 func NewBootstrap(h host.Host, c Config) (error, *Bootstrap) {
 
 	if c.MinPeers > len(c.BootstrapPeers) {
-		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), Bootstrap{}
+		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), &Bootstrap{}
 	}
 
 	var peers []*peerstore.PeerInfo
