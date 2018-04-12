@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/ipfs/go-log"
-	host "github.com/libp2p/go-libp2p-host"
-	net "github.com/libp2p/go-libp2p-net"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
-	ma "github.com/multiformats/go-multiaddr"
+	host "gx/ipfs/QmNmJZL7FQySMtE2BQuLMuZg2EB2CLEunJJUSVSc9YnnbV/go-libp2p-host"
+	log "gx/ipfs/QmRb5jh8z2E8hMGN2tkvs1yHynUanqnZ3UeKwgN1i9P1F8/go-log"
+	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
+	peerstore "gx/ipfs/QmXauCuJzmzapetmC6W4TuDJLL1yFFrVzSHoWv8YdbmnxH/go-libp2p-peerstore"
+	net "gx/ipfs/QmRQX1yaPQFynWkByKcQTPpy3uC21oXZ5X32KEcLZnefz8/go-libp2p-net"
 )
 
 var logger = log.Logger("bootstrap")

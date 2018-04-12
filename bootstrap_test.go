@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	libp2p "github.com/libp2p/go-libp2p"
 	require "github.com/stretchr/testify/require"
+	libp2p "gx/ipfs/QmNh1kGFFdsPu79KNSaL4NUKUPb4Eiz4KHdMtFY6664RDp/go-libp2p"
 	"time"
 )
 
