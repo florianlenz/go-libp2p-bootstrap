@@ -16,8 +16,12 @@ import (
 var logger = log.Logger("bootstrap")
 
 //Bootstrap configuration
-//The hardBootstrap should be at least 20 times higher than
-//the bootstrapInterval.
+//"HardBootstrap" is the time after we
+//dial to peer's in order to prove if we are connected ot the WWW
+//instead of waiting for a delta in our addresses.
+//This shouldn't be done too often since it can lead to problems
+//(https://github.com/libp2p/go-libp2p-swarm/issues/37).
+//You can chose something that is higher than one minute.
 type Config struct {
 	BootstrapPeers    []string
 	MinPeers          int
