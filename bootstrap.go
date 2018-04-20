@@ -146,17 +146,15 @@ func (b *Bootstrap) networkInterfaceListener() {
 }
 
 //Start bootstrapping
-func (b *Bootstrap) Bootstrap() []error {
+func (b *Bootstrap) Bootstrap() error {
 
-	if b.started == false {
-		return []error{
-			errors.New("you need to to call Start() first in order to manually bootstrap"),
-		}
+	if !b.started {
+		return errors.New("you need to to call Start() first in order to manually bootstrap")
 	}
 
 	c := make(chan struct{})
 
-	var errorStack []error
+	var e error
 
 	for _, v := range b.bootstrapPeers {
 
@@ -166,7 +164,7 @@ func (b *Bootstrap) Bootstrap() []error {
 				err := b.host.Connect(ctx, *v)
 				if err != nil {
 					logger.Debug("Failed to connect to peer: ", v)
-					errorStack = append(errorStack, err)
+					e = err
 					c <- struct{}{}
 					return
 				}
@@ -181,7 +179,7 @@ func (b *Bootstrap) Bootstrap() []error {
 
 	}
 
-	return errorStack
+	return e
 
 }
 
