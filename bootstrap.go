@@ -155,7 +155,7 @@ func (b *Bootstrap) Bootstrap() error {
 	c := make(chan struct{})
 
 	var e error
-
+	
 	for _, v := range b.bootstrapPeers {
 
 		go func() {
@@ -216,7 +216,7 @@ func (b *Bootstrap) Start() error {
 	//Register listener to react on dropped connections
 	b.host.Network().Notify(&notifyBundle)
 
-	if errors := b.Bootstrap(); len(errors) != 0 {
+	if err := b.Bootstrap(); err != nil {
 		//In case we fail to start,
 		//Register network interface listener
 		b.networkInterfaceListener()
