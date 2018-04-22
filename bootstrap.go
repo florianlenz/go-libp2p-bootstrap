@@ -43,7 +43,7 @@ type Bootstrap struct {
 //Lock the interface listener
 func (b *Bootstrap) lockInterfaceListener() {
 
-	if b.interfaceListenerLocked == true {
+	if b.interfaceListenerLocked {
 		panic("Interface listener is already locked")
 	}
 
@@ -53,7 +53,7 @@ func (b *Bootstrap) lockInterfaceListener() {
 //Unlock the interface listener
 func (b *Bootstrap) unlockInterfaceListener() {
 
-	if b.interfaceListenerLocked == false {
+	if !b.interfaceListenerLocked {
 		panic("Interface listener is already unlocked")
 	}
 
@@ -99,7 +99,7 @@ func (b *Bootstrap) networkInterfaceListener() {
 
 			//In case bootstrapping is stopped
 			//we want to exit
-			if b.started == false {
+			if !b.started {
 				break
 			}
 
@@ -185,7 +185,7 @@ func (b *Bootstrap) Bootstrap() error {
 
 //Stop the bootstrap service
 func (b *Bootstrap) Stop() error {
-	if b.started == false {
+	if !b.started {
 		return errors.New("bootstrap must be started in order to stop it")
 	}
 
@@ -197,7 +197,7 @@ func (b *Bootstrap) Stop() error {
 //Start bootstrapping
 func (b *Bootstrap) Start() error {
 
-	if b.started == true {
+	if b.started {
 		return errors.New("already started")
 	}
 	b.started = true
