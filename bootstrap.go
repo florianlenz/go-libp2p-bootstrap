@@ -155,7 +155,7 @@ func (b *Bootstrap) Bootstrap() error {
 	c := make(chan struct{})
 
 	var e error
-	
+
 	for _, v := range b.bootstrapPeers {
 
 		go func() {
