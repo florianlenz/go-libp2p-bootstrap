@@ -184,7 +184,7 @@ func (b *Bootstrap) Bootstrap() error {
 }
 
 //Stop the bootstrap service
-func (b *Bootstrap) Stop() error {
+func (b *Bootstrap) Close() error {
 	if !b.started {
 		return errors.New("bootstrap must be started in order to stop it")
 	}

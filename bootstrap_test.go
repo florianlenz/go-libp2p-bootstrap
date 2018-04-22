@@ -206,7 +206,7 @@ func TestStopError(t *testing.T) {
 
 	bootstrap.started = false
 
-	err = bootstrap.Stop()
+	err = bootstrap.Close()
 	require.Equal(t, "bootstrap must be started in order to stop it", err.Error())
 
 }
@@ -228,7 +228,7 @@ func TestStartStop(t *testing.T) {
 
 	//Just start and stop and start and stop
 	require.Nil(t, bootstrap.Start())
-	require.Nil(t, bootstrap.Stop())
+	require.Nil(t, bootstrap.Close())
 	require.Nil(t, bootstrap.Start())
-	require.Nil(t, bootstrap.Stop())
+	require.Nil(t, bootstrap.Close())
 }
