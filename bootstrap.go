@@ -44,7 +44,7 @@ type Bootstrap struct {
 }
 
 //Bootstrap thought the list of bootstrap peer's
-func (b *Bootstrap) Bootstrap() error {
+func (b *Bootstrap) Bootstrap(ctx context.Context) error {
 
 	if !b.startedState.HasStarted() {
 		return errors.New("you need to to call Start() first in order to manually bootstrap")
@@ -60,9 +60,7 @@ func (b *Bootstrap) Bootstrap() error {
 		go func() {
 			defer wg.Done()
 			if b.peerState.Amount() < b.minPeers {
-				ctx := context.Background()
-				err := b.host.Connect(ctx, *v)
-				if err != nil {
+				if err := b.host.Connect(context.Background(), *v); err != nil {
 					logger.Debug("Failed to connect to peer: ", v)
 					e = err
 					return
@@ -92,7 +90,7 @@ func (b *Bootstrap) Close() error {
 }
 
 //Start bootstrapping
-func (b *Bootstrap) Start() error {
+func (b *Bootstrap) Start(ctx context.Context) error {
 
 	//Pre start conditions
 	if b.startedState.HasStarted() {
@@ -115,7 +113,7 @@ func (b *Bootstrap) Start() error {
 	b.host.Network().Notify(&notifyBundle)
 
 	//Do an initial bootstrap
-	err := b.Bootstrap()
+	err := b.Bootstrap(ctx)
 
 	//Start the worker
 	go func() {
@@ -140,7 +138,7 @@ func (b *Bootstrap) Start() error {
 			//Bootstrap on network delta (delta between the amount of our addresses)
 			if myAddresses != lastNetworkState {
 				lastNetworkState = myAddresses
-				b.Bootstrap()
+				b.Bootstrap(context.Background())
 			}
 
 			//Wait some time for the new round

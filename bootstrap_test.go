@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"fmt"
 	libp2p "github.com/libp2p/go-libp2p"
 	require "github.com/stretchr/testify/require"
 )
@@ -43,7 +42,7 @@ func TestNewBootstrap(t *testing.T) {
 
 }
 
-func TestCancel(t *testing.T) {
+func TestBootstrapping(t *testing.T) {
 
 	//Create host object
 	ctx := context.Background()
@@ -54,11 +53,11 @@ func TestCancel(t *testing.T) {
 	err, bootstrap := NewBootstrap(h, Config{
 		BootstrapPeers:    bootstrapPeers,
 		MinPeers:          4,
-		BootstrapInterval: 1,
-		HardBootstrap:     2,
+		BootstrapInterval: time.Second * 3,
+		HardBootstrap:     time.Second * 30,
 	})
+
+	err = bootstrap.Start(context.Background())
 	require.Nil(t, err)
 
-	err = bootstrap.Start()
-	fmt.Println(err)
 }
