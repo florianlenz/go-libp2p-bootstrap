@@ -54,21 +54,20 @@ func (b *Bootstrap) Bootstrap(ctx context.Context) error {
 
 	var wg sync.WaitGroup
 
-	for _, v := range b.bootstrapPeers {
+	for _, peer := range b.bootstrapPeers {
 
 		wg.Add(1)
-		go func() {
+		go func(peer *peerstore.PeerInfo) {
 			defer wg.Done()
 			if b.peerState.Amount() < b.minPeers {
-				if err := b.host.Connect(context.Background(), *v); err != nil {
-					logger.Debug("Failed to connect to peer: ", v)
+				if err := b.host.Connect(ctx, *peer); err != nil {
+					logger.Debug("Failed to connect to peer: ", peer)
 					e = err
 					return
 				}
-				logger.Debug("Connected to: ", v)
-				return
+				logger.Debug("Connected to: ", peer)
 			}
-		}()
+		}(peer)
 
 	}
 

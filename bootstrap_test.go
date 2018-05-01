@@ -52,12 +52,12 @@ func TestBootstrapping(t *testing.T) {
 	//Create bootstrap object
 	err, bootstrap := NewBootstrap(h, Config{
 		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
+		MinPeers:          len(bootstrapPeers),
 		BootstrapInterval: time.Second * 3,
 		HardBootstrap:     time.Second * 30,
 	})
 
 	err = bootstrap.Start(context.Background())
 	require.Nil(t, err)
-
+	require.Equal(t, bootstrap.minPeers, len(h.Network().Peers()))
 }
