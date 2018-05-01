@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/ipfs/go-log"
-	host "github.com/libp2p/go-libp2p-host"
-	net "github.com/libp2p/go-libp2p-net"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
-	ma "github.com/multiformats/go-multiaddr"
+	log "gx/ipfs/QmTG23dvpBCBjqQwyDxV8CQT6jmS4PSftNr1VqHhE3MLy7/go-log"
+	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
+	net "gx/ipfs/QmXoz9o2PT3tEzf7hicegwex5UgVP54n3k82K7jrWFyN86/go-libp2p-net"
+	peerstore "gx/ipfs/QmdeiKhUy1TVGBaKxt7y1QmBDLBdisSrLJ1x58Eoj4PXUh/go-libp2p-peerstore"
+	host "gx/ipfs/QmfZTdmunzKzAGJrSvXXQbQ5kLLUiEMX5vdwux7iXkdk7D/go-libp2p-host"
+	"sync"
 )
 
 var logger = log.Logger("bootstrap")
@@ -152,32 +153,31 @@ func (b *Bootstrap) Bootstrap() error {
 		return errors.New("you need to to call Start() first in order to manually bootstrap")
 	}
 
-	c := make(chan struct{})
-
 	var e error
+
+	var wg sync.WaitGroup
 
 	for _, v := range b.bootstrapPeers {
 
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			if b.amountConnPeers() < b.minPeers {
 				ctx := context.Background()
 				err := b.host.Connect(ctx, *v)
 				if err != nil {
 					logger.Debug("Failed to connect to peer: ", v)
 					e = err
-					c <- struct{}{}
 					return
 				}
 				logger.Debug("Connected to: ", v)
-				c <- struct{}{}
 				return
 			}
-			c <- struct{}{}
 		}()
 
-		<-c
-
 	}
+
+	wg.Wait()
 
 	return e
 
