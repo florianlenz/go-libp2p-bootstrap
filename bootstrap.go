@@ -9,11 +9,11 @@ import (
 
 	peerState "github.com/florianlenz/go-libp2p-bootstrap/state/peers"
 	startedState "github.com/florianlenz/go-libp2p-bootstrap/state/started"
-	log "github.com/ipfs/go-log"
-	host "github.com/libp2p/go-libp2p-host"
-	net "github.com/libp2p/go-libp2p-net"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
-	ma "github.com/multiformats/go-multiaddr"
+	log "gx/ipfs/QmTG23dvpBCBjqQwyDxV8CQT6jmS4PSftNr1VqHhE3MLy7/go-log"
+	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
+	net "gx/ipfs/QmXoz9o2PT3tEzf7hicegwex5UgVP54n3k82K7jrWFyN86/go-libp2p-net"
+	peerstore "gx/ipfs/QmdeiKhUy1TVGBaKxt7y1QmBDLBdisSrLJ1x58Eoj4PXUh/go-libp2p-peerstore"
+	host "gx/ipfs/QmfZTdmunzKzAGJrSvXXQbQ5kLLUiEMX5vdwux7iXkdk7D/go-libp2p-host"
 )
 
 var logger = log.Logger("bootstrap")
@@ -119,10 +119,13 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 
 		lastNetworkState := len(b.host.Network().Peers())
 
+		hb := time.Now()
+
 		for {
 
 			//Break in case we stopped the bootstrapping process
 			if !b.startedState.HasStarted() {
+				logger.Warning("stop worker since bootstrap hasn't started")
 				break
 			}
 
@@ -131,6 +134,9 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 
 			//Continue when we are connected to the minPeer amount
 			if connectedPeers >= b.minPeers {
+				logger.Info("already connected to enough peer's")
+				hb = time.Now()
+				time.Sleep(b.bootstrapInterval)
 				continue
 			}
 
@@ -138,6 +144,13 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 			if myAddresses != lastNetworkState {
 				lastNetworkState = myAddresses
 				b.Bootstrap(context.Background())
+			}
+
+			//Hard bootstrap
+			if time.Now().After(hb.Add(b.hardBootstrap)) {
+				logger.Debug("Hard bootstrap")
+				b.Bootstrap(context.Background())
+				hb = time.Now()
 			}
 
 			//Wait some time for the new round
@@ -153,6 +166,8 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 
 //Create new bootstrap service
 func NewBootstrap(h host.Host, c Config) (error, *Bootstrap) {
+
+	log.SetDebugLogging()
 
 	if c.MinPeers > len(c.BootstrapPeers) {
 		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), &Bootstrap{}
