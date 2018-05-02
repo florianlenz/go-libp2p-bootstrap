@@ -57,11 +57,8 @@ func TestBootstrapping(t *testing.T) {
 		HardBootstrap:     time.Second * 10,
 	})
 
-	c := make(chan int)
-
 	err = bootstrap.Start(context.Background())
 	require.Nil(t, err)
 	require.Equal(t, bootstrap.minPeers, len(h.Network().Peers()))
 
-	<-c
 }

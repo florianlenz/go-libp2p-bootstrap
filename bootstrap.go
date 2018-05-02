@@ -167,8 +167,6 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 //Create new bootstrap service
 func NewBootstrap(h host.Host, c Config) (error, *Bootstrap) {
 
-	log.SetDebugLogging()
-
 	if c.MinPeers > len(c.BootstrapPeers) {
 		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), &Bootstrap{}
 	}
