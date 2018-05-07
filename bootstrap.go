@@ -9,11 +9,11 @@ import (
 
 	peerState "github.com/florianlenz/go-libp2p-bootstrap/state/peers"
 	startedState "github.com/florianlenz/go-libp2p-bootstrap/state/started"
-	log "github.com/ipfs/go-log"
-	host "github.com/libp2p/go-libp2p-host"
-	net "github.com/libp2p/go-libp2p-net"
-	peerstore "github.com/libp2p/go-libp2p-peerstore"
-	ma "github.com/multiformats/go-multiaddr"
+	log "gx/ipfs/QmTG23dvpBCBjqQwyDxV8CQT6jmS4PSftNr1VqHhE3MLy7/go-log"
+	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
+	net "gx/ipfs/QmXoz9o2PT3tEzf7hicegwex5UgVP54n3k82K7jrWFyN86/go-libp2p-net"
+	peerstore "gx/ipfs/QmdeiKhUy1TVGBaKxt7y1QmBDLBdisSrLJ1x58Eoj4PXUh/go-libp2p-peerstore"
+	host "gx/ipfs/QmfZTdmunzKzAGJrSvXXQbQ5kLLUiEMX5vdwux7iXkdk7D/go-libp2p-host"
 )
 
 var logger = log.Logger("bootstrap")
@@ -165,7 +165,7 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 }
 
 //Create new bootstrap service
-func NewBootstrap(h host.Host, c Config) (error, *Bootstrap) {
+func New(h host.Host, c Config) (error, *Bootstrap) {
 
 	if c.MinPeers > len(c.BootstrapPeers) {
 		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), &Bootstrap{}
