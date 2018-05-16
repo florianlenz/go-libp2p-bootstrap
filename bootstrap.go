@@ -165,10 +165,10 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 }
 
 //Create new bootstrap service
-func New(h host.Host, c Config) (error, *Bootstrap) {
+func New(h host.Host, c Config) (*Bootstrap, error) {
 
 	if c.MinPeers > len(c.BootstrapPeers) {
-		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), &Bootstrap{}
+		return nil, errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers)))
 	}
 
 	var peers []*peerstore.PeerInfo
@@ -177,19 +177,19 @@ func New(h host.Host, c Config) (error, *Bootstrap) {
 		addr, err := ma.NewMultiaddr(v)
 
 		if err != nil {
-			return err, &Bootstrap{}
+			return nil, err
 		}
 
 		pInfo, err := peerstore.InfoFromP2pAddr(addr)
 
 		if err != nil {
-			return err, &Bootstrap{}
+			return nil, err
 		}
 
 		peers = append(peers, pInfo)
 	}
 
-	return nil, &Bootstrap{
+	return &Bootstrap{
 		minPeers:          c.MinPeers,
 		bootstrapPeers:    peers,
 		host:              h,
@@ -197,6 +197,6 @@ func New(h host.Host, c Config) (error, *Bootstrap) {
 		bootstrapInterval: c.BootstrapInterval,
 		startedState:      startedState.StateFactory(),
 		peerState:         peerState.StateFactory(),
-	}
+	}, nil
 
 }

@@ -27,7 +27,7 @@ func TestNewBootstrap(t *testing.T) {
 	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
-	err, bootstrap := New(h, Config{
+	bootstrap, err := New(h, Config{
 		BootstrapPeers:    bootstrapPeers,
 		MinPeers:          4,
 		BootstrapInterval: time.Second * 2,
@@ -50,7 +50,7 @@ func TestBootstrapping(t *testing.T) {
 	require.Nil(t, err)
 
 	//Create bootstrap object
-	err, bootstrap := New(h, Config{
+	bootstrap, err := New(h, Config{
 		BootstrapPeers:    bootstrapPeers,
 		MinPeers:          len(bootstrapPeers),
 		BootstrapInterval: time.Second * 3,
