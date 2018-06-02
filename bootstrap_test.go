@@ -3,10 +3,10 @@ package bootstrap
 import (
 	"context"
 	"testing"
+	"time"
 
 	require "github.com/stretchr/testify/require"
-	libp2p "gx/ipfs/QmNh1kGFFdsPu79KNSaL4NUKUPb4Eiz4KHdMtFY6664RDp/go-libp2p"
-	"time"
+	libp2p "gx/ipfs/QmWsV6kzPaYGBDVyuUfWBvyQygEc9Qrv9vzo8vZ7X4mdLN/go-libp2p"
 )
 
 var bootstrapPeers = []string{
@@ -27,7 +27,7 @@ func TestNewBootstrap(t *testing.T) {
 	h, err := libp2p.New(ctx, libp2p.Defaults)
 	require.Nil(t, err)
 
-	err, bootstrap := NewBootstrap(h, Config{
+	bootstrap, err := New(h, Config{
 		BootstrapPeers:    bootstrapPeers,
 		MinPeers:          4,
 		BootstrapInterval: time.Second * 2,
@@ -42,77 +42,7 @@ func TestNewBootstrap(t *testing.T) {
 
 }
 
-func TestLockInterfaceListener(t *testing.T) {
-
-	ctx := context.Background()
-	h, err := libp2p.New(ctx, libp2p.Defaults)
-	require.Nil(t, err)
-
-	err, bootstrap := NewBootstrap(h, Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
-		BootstrapInterval: 1,
-		HardBootstrap:     3,
-	})
-	require.Nil(t, err)
-
-	//isInterfaceListenerLocked should be false as a default
-	require.False(t, bootstrap.isInterfaceListenerLocked())
-	//Lock the interface listener
-	bootstrap.lockInterfaceListener()
-	//isInterfaceListenerLocked should be true since we locked it
-	require.True(t, bootstrap.isInterfaceListenerLocked())
-
-}
-
-func TestLockInterfaceListenerError(t *testing.T) {
-
-	ctx := context.Background()
-	h, err := libp2p.New(ctx, libp2p.Defaults)
-	require.Nil(t, err)
-
-	err, bootstrap := NewBootstrap(h, Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
-		BootstrapInterval: 1,
-		HardBootstrap:     3,
-	})
-	require.Nil(t, err)
-
-	require.Panics(t, func() {
-		bootstrap.lockInterfaceListener()
-		//Second lock should panic since
-		//we need to unlock before we lock again
-		bootstrap.lockInterfaceListener()
-	})
-
-}
-
-func TestUnlockInterfaceListenerError(t *testing.T) {
-	ctx := context.Background()
-	h, err := libp2p.New(ctx, libp2p.Defaults)
-	require.Nil(t, err)
-
-	err, bootstrap := NewBootstrap(h, Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
-		BootstrapInterval: 1,
-		HardBootstrap:     3,
-	})
-	require.Nil(t, err)
-
-	bootstrap.lockInterfaceListener()
-
-	require.Panics(t, func() {
-		//Second lock should panic since
-		//we need to unlock before we lock again
-		bootstrap.unlockInterfaceListener()
-		bootstrap.unlockInterfaceListener()
-	})
-
-}
-
-func TestAmountOfConnectedPeers(t *testing.T) {
+func TestBootstrapping(t *testing.T) {
 
 	//Create host object
 	ctx := context.Background()
@@ -120,115 +50,15 @@ func TestAmountOfConnectedPeers(t *testing.T) {
 	require.Nil(t, err)
 
 	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, Config{
+	bootstrap, err := New(h, Config{
 		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          1,
-		BootstrapInterval: time.Second * 1,
+		MinPeers:          len(bootstrapPeers),
+		BootstrapInterval: time.Second * 3,
 		HardBootstrap:     time.Second * 10,
 	})
+
+	err = bootstrap.Start(context.Background())
 	require.Nil(t, err)
+	require.Equal(t, bootstrap.minPeers, len(h.Network().Peers()))
 
-	//amount of connected peer's should be 0 since we didn't dial till now
-	require.Equal(t, 0, bootstrap.amountConnPeers())
-
-	//Start bootstrap process
-	bootstrap.Start()
-
-	//After we bootstrapped successfully we should be connected to one peer
-	require.Equal(t, 1, bootstrap.amountConnPeers())
-
-}
-
-func TestNetworkInterfaceListener(t *testing.T) {
-	//Create host object
-	ctx := context.Background()
-	h, err := libp2p.New(ctx, libp2p.Defaults)
-	require.Nil(t, err)
-
-	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
-		BootstrapInterval: time.Second * 1,
-		HardBootstrap:     time.Second * 10,
-	})
-	require.Nil(t, err)
-
-	//Expect interface listener locked since we didn't
-	//start the networkInterfaceListener()
-	require.Equal(t, false, bootstrap.interfaceListenerLocked)
-
-	//Register network interface listener
-	bootstrap.networkInterfaceListener()
-
-	//After we registered the network interface listener
-	//the interface listener should be locked
-	require.Equal(t, true, bootstrap.interfaceListenerLocked)
-}
-
-func TestStartError(t *testing.T) {
-
-	//Create host object
-	ctx := context.Background()
-	h, err := libp2p.New(ctx, libp2p.Defaults)
-	require.Nil(t, err)
-
-	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
-		BootstrapInterval: 1,
-		HardBootstrap:     2,
-	})
-	require.Nil(t, err)
-
-	bootstrap.started = true
-
-	err = bootstrap.Start()
-	require.Equal(t, "already started", err.Error())
-
-}
-
-func TestStopError(t *testing.T) {
-	//Create host object
-	ctx := context.Background()
-	h, err := libp2p.New(ctx, libp2p.Defaults)
-	require.Nil(t, err)
-
-	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
-		BootstrapInterval: 1,
-		HardBootstrap:     2,
-	})
-	require.Nil(t, err)
-
-	bootstrap.started = false
-
-	err = bootstrap.Stop()
-	require.Equal(t, "bootstrap must be started in order to stop it", err.Error())
-
-}
-
-func TestStartStop(t *testing.T) {
-	//Create host object
-	ctx := context.Background()
-	h, err := libp2p.New(ctx, libp2p.Defaults)
-	require.Nil(t, err)
-
-	//Create bootstrap object
-	err, bootstrap := NewBootstrap(h, Config{
-		BootstrapPeers:    bootstrapPeers,
-		MinPeers:          4,
-		BootstrapInterval: 1,
-		HardBootstrap:     2,
-	})
-	require.Nil(t, err)
-
-	//Just start and stop and start and stop
-	require.Nil(t, bootstrap.Start())
-	require.Nil(t, bootstrap.Stop())
-	require.Nil(t, bootstrap.Start())
-	require.Nil(t, bootstrap.Stop())
 }

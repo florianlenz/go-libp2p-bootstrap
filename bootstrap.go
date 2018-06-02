@@ -4,20 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
-	host "gx/ipfs/QmNmJZL7FQySMtE2BQuLMuZg2EB2CLEunJJUSVSc9YnnbV/go-libp2p-host"
-	log "gx/ipfs/QmRb5jh8z2E8hMGN2tkvs1yHynUanqnZ3UeKwgN1i9P1F8/go-log"
+	peerState "github.com/florianlenz/go-libp2p-bootstrap/state/peers"
+	startedState "github.com/florianlenz/go-libp2p-bootstrap/state/started"
+	log "gx/ipfs/QmTG23dvpBCBjqQwyDxV8CQT6jmS4PSftNr1VqHhE3MLy7/go-log"
 	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
-	peerstore "gx/ipfs/QmXauCuJzmzapetmC6W4TuDJLL1yFFrVzSHoWv8YdbmnxH/go-libp2p-peerstore"
-	net "gx/ipfs/QmRQX1yaPQFynWkByKcQTPpy3uC21oXZ5X32KEcLZnefz8/go-libp2p-net"
+	net "gx/ipfs/QmXoz9o2PT3tEzf7hicegwex5UgVP54n3k82K7jrWFyN86/go-libp2p-net"
+	peerstore "gx/ipfs/QmdeiKhUy1TVGBaKxt7y1QmBDLBdisSrLJ1x58Eoj4PXUh/go-libp2p-peerstore"
+	host "gx/ipfs/QmfZTdmunzKzAGJrSvXXQbQ5kLLUiEMX5vdwux7iXkdk7D/go-libp2p-host"
 )
 
 var logger = log.Logger("bootstrap")
 
 //Bootstrap configuration
-//The hardBootstrap should be at least 20 times higher than
-//the bootstrapInterval.
+//"HardBootstrap" is the time after we
+//dial to peer's in order to prove if we are connected ot the WWW
+//instead of waiting for a delta in our addresses.
+//This shouldn't be done too often since it can lead to problems
+//(https://github.com/libp2p/go-libp2p-swarm/issues/37).
+//You can chose something that is higher than one minute.
 type Config struct {
 	BootstrapPeers    []string
 	MinPeers          int
@@ -26,208 +33,142 @@ type Config struct {
 }
 
 type Bootstrap struct {
-	minPeers                int
-	bootstrapPeers          []*peerstore.PeerInfo
-	host                    host.Host
-	notifiee                *net.NotifyBundle
-	interfaceListenerLocked bool
-	bootstrapInterval       time.Duration
-	hardBootstrap           time.Duration
-	started                 bool
+	minPeers          int
+	bootstrapPeers    []*peerstore.PeerInfo
+	host              host.Host
+	notifiee          *net.NotifyBundle
+	bootstrapInterval time.Duration
+	hardBootstrap     time.Duration
+	startedState      *startedState.State
+	peerState         *peerState.State
 }
 
-//Lock the interface listener
-func (b *Bootstrap) lockInterfaceListener() {
+//Bootstrap thought the list of bootstrap peer's
+func (b *Bootstrap) Bootstrap(ctx context.Context) error {
 
-	if b.interfaceListenerLocked == true {
-		panic("Interface listener is already locked")
+	if !b.startedState.HasStarted() {
+		return errors.New("you need to to call Start() first in order to manually bootstrap")
 	}
 
-	b.interfaceListenerLocked = true
-}
+	var e error
 
-//Unlock the interface listener
-func (b *Bootstrap) unlockInterfaceListener() {
+	var wg sync.WaitGroup
 
-	if b.interfaceListenerLocked == false {
-		panic("Interface listener is already unlocked")
-	}
+	for _, peer := range b.bootstrapPeers {
 
-	b.interfaceListenerLocked = false
-}
-
-//Is the interface listener locked
-func (b *Bootstrap) isInterfaceListenerLocked() bool {
-	return b.interfaceListenerLocked
-}
-
-//Get the amount of peer's we are connected to
-func (b *Bootstrap) amountConnPeers() int {
-	logger.Debug("Amount of connected peer's: ", len(b.host.Network().Peers()))
-	return len(b.host.Network().Peers())
-}
-
-//Register a network state change handler
-func (b *Bootstrap) networkInterfaceListener() {
-
-	//Only register listener when we are connected
-	//to too less peer's
-	if b.amountConnPeers() >= b.minPeers {
-		return
-	}
-
-	//Lock down the interface listener
-	//to prevent a second listener registration
-	b.lockInterfaceListener()
-
-	//Register latest network state
-	mas, err := b.host.Network().InterfaceListenAddresses()
-	if err != nil {
-		panic(err)
-	}
-	lastNetworkState := len(mas)
-	now := time.Now()
-	logger.Debug("Addresses at install time: ", lastNetworkState)
-
-	go func() {
-
-		for {
-
-			//In case bootstrapping is stopped
-			//we want to exit
-			if b.started == false {
-				break
-			}
-
-			//After x we want to do a hard bootstrap.
-			//Hard bootstrap mean's that we bypass the
-			//check for an delta on the addresses and try to bootstrap
-			if time.Now().After(now.Add(b.hardBootstrap)) {
-				logger.Debug("Hard bootstrap")
-				b.Bootstrap()
-				now = time.Now()
-			}
-
-			//Get current network state
-			mas, err := b.host.Network().InterfaceListenAddresses()
-			if err != nil {
-				panic(err)
-			}
-
-			//Bootstrap on network delta (delta between the amount of addresses)
-			if len(mas) != lastNetworkState {
-				lastNetworkState = len(mas)
-				b.Bootstrap()
-			}
-
-			//We can un register the handler when we are connected to enough peer's
-			if len(b.host.Network().Peers()) >= b.minPeers {
-				break
-			}
-
-			//Pause before we continue with bootstrap attempts
-			time.Sleep(b.bootstrapInterval)
-
-			logger.Debug("Next listener round after: ", b.bootstrapInterval)
-		}
-
-		//Time to unlock the interface listener
-		//since the for loop will only be "done"
-		//when we are connected to enough peer's
-		logger.Debug("Free network interface listener")
-		b.unlockInterfaceListener()
-
-	}()
-
-}
-
-//Start bootstrapping
-func (b *Bootstrap) Bootstrap() []error {
-
-	if b.started == false {
-		return []error{
-			errors.New("you need to to call Start() first in order to manually bootstrap"),
-		}
-	}
-
-	c := make(chan struct{})
-
-	var errorStack []error
-
-	for _, v := range b.bootstrapPeers {
-
-		go func() {
-			if b.amountConnPeers() < b.minPeers {
-				ctx := context.Background()
-				err := b.host.Connect(ctx, *v)
-				if err != nil {
-					logger.Debug("Failed to connect to peer: ", v)
-					errorStack = append(errorStack, err)
-					c <- struct{}{}
+		wg.Add(1)
+		go func(peer *peerstore.PeerInfo) {
+			defer wg.Done()
+			if b.peerState.Amount() < b.minPeers {
+				if err := b.host.Connect(ctx, *peer); err != nil {
+					logger.Debug("Failed to connect to peer: ", peer)
+					e = err
 					return
 				}
-				logger.Debug("Connected to: ", v)
-				c <- struct{}{}
-				return
+				logger.Debug("Connected to: ", peer)
 			}
-			c <- struct{}{}
-		}()
-
-		<-c
+		}(peer)
 
 	}
 
-	return errorStack
+	wg.Wait()
+
+	return e
 
 }
 
 //Stop the bootstrap service
-func (b *Bootstrap) Stop() error {
-	if b.started == false {
+func (b *Bootstrap) Close() error {
+	if !b.startedState.HasStarted() {
 		return errors.New("bootstrap must be started in order to stop it")
 	}
 
 	b.host.Network().StopNotify(b.notifiee)
-	b.started = false
+	b.startedState.Stop()
 	return nil
 }
 
 //Start bootstrapping
-func (b *Bootstrap) Start() error {
+func (b *Bootstrap) Start(ctx context.Context) error {
 
-	if b.started == true {
+	//Pre start conditions
+	if b.startedState.HasStarted() {
 		return errors.New("already started")
 	}
-	b.started = true
+	b.startedState.Start()
 
-	//Listener
+	//Set initial amount of peer's
+	b.peerState.SetAmountOfPeers(len(b.host.Network().Peers()))
+
+	//Listener that updates the amount of connected peer's
 	notifyBundle := net.NotifyBundle{
 		DisconnectedF: func(network net.Network, conn net.Conn) {
-			logger.Debug("Dropped connection to peer: ", conn.RemotePeer())
-			if b.isInterfaceListenerLocked() == false {
-				logger.Debug("Install network interface listener")
-				b.networkInterfaceListener()
-			}
+			b.peerState.SetAmountOfPeers(len(network.Peers()))
+		},
+		ConnectedF: func(network net.Network, conn net.Conn) {
+			b.peerState.SetAmountOfPeers(len(network.Peers()))
 		},
 	}
-
-	//Register listener to react on dropped connections
 	b.host.Network().Notify(&notifyBundle)
 
-	if errors := b.Bootstrap(); len(errors) != 0 {
-		//In case we fail to start,
-		//Register network interface listener
-		b.networkInterfaceListener()
-	}
+	//Do an initial bootstrap
+	err := b.Bootstrap(ctx)
 
-	return nil
+	//Start the worker
+	go func() {
+
+		lastNetworkState := len(b.host.Network().Peers())
+
+		hb := time.Now()
+
+		for {
+
+			//Break in case we stopped the bootstrapping process
+			if !b.startedState.HasStarted() {
+				logger.Warning("stop worker since bootstrap hasn't started")
+				break
+			}
+
+			myAddresses := len(b.host.Network().Peers())
+			connectedPeers := b.peerState.Amount()
+
+			//Continue when we are connected to the minPeer amount
+			if connectedPeers >= b.minPeers {
+				logger.Info("already connected to enough peer's")
+				hb = time.Now()
+				time.Sleep(b.bootstrapInterval)
+				continue
+			}
+
+			//Bootstrap on network delta (delta between the amount of our addresses)
+			if myAddresses != lastNetworkState {
+				lastNetworkState = myAddresses
+				b.Bootstrap(context.Background())
+			}
+
+			//Hard bootstrap
+			if time.Now().After(hb.Add(b.hardBootstrap)) {
+				logger.Debug("Hard bootstrap")
+				b.Bootstrap(context.Background())
+				hb = time.Now()
+			}
+
+			//Wait some time for the new round
+			time.Sleep(b.bootstrapInterval)
+
+		}
+
+	}()
+
+	return err
+
 }
 
 //Create new bootstrap service
-func NewBootstrap(h host.Host, c Config) (error, *Bootstrap) {
+func New(h host.Host, c Config) (*Bootstrap, error) {
 
 	if c.MinPeers > len(c.BootstrapPeers) {
-		return errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers))), &Bootstrap{}
+		return nil, errors.New(fmt.Sprintf("Too less bootstrapping nodes. Expected at least: %d, got: %d", c.MinPeers, len(c.BootstrapPeers)))
 	}
 
 	var peers []*peerstore.PeerInfo
@@ -236,26 +177,26 @@ func NewBootstrap(h host.Host, c Config) (error, *Bootstrap) {
 		addr, err := ma.NewMultiaddr(v)
 
 		if err != nil {
-			return err, &Bootstrap{}
+			return nil, err
 		}
 
 		pInfo, err := peerstore.InfoFromP2pAddr(addr)
 
 		if err != nil {
-			return err, &Bootstrap{}
+			return nil, err
 		}
 
 		peers = append(peers, pInfo)
 	}
 
-	return nil, &Bootstrap{
-		minPeers:                c.MinPeers,
-		bootstrapPeers:          peers,
-		host:                    h,
-		hardBootstrap:           c.HardBootstrap,
-		bootstrapInterval:       c.BootstrapInterval,
-		interfaceListenerLocked: false,
-		started:                 false,
-	}
+	return &Bootstrap{
+		minPeers:          c.MinPeers,
+		bootstrapPeers:    peers,
+		host:              h,
+		hardBootstrap:     c.HardBootstrap,
+		bootstrapInterval: c.BootstrapInterval,
+		startedState:      startedState.StateFactory(),
+		peerState:         peerState.StateFactory(),
+	}, nil
 
 }
