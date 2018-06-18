@@ -32,15 +32,20 @@ type Config struct {
 	HardBootstrap     time.Duration
 }
 
+type wrappedTicker struct {
+	ticker *time.Ticker
+	closer chan struct{}
+}
+
 type Bootstrap struct {
-	minPeers          int
-	bootstrapPeers    []*peerstore.PeerInfo
-	host              host.Host
-	notifiee          *net.NotifyBundle
-	bootstrapInterval time.Duration
-	hardBootstrap     time.Duration
-	startedState      *startedState.State
-	peerState         *peerState.State
+	minPeers       int
+	bootstrapPeers []*peerstore.PeerInfo
+	host           host.Host
+	notifiee       *net.NotifyBundle
+	bootstrap      wrappedTicker
+	hardBootstrap  wrappedTicker
+	startedState   *startedState.State
+	peerState      *peerState.State
 }
 
 //Bootstrap thought the list of bootstrap peer's
@@ -85,6 +90,11 @@ func (b *Bootstrap) Close() error {
 
 	b.host.Network().StopNotify(b.notifiee)
 	b.startedState.Stop()
+
+	// close the ticker
+	b.hardBootstrap.closer <- struct{}{}
+	b.bootstrap.closer <- struct{}{}
+
 	return nil
 }
 
@@ -114,48 +124,58 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 	//Do an initial bootstrap
 	err := b.Bootstrap(ctx)
 
-	//Start the worker
+	// hard bootstrap
+	go func() {
+
+		for {
+			select {
+			case <-b.hardBootstrap.closer:
+				return
+			case <-b.hardBootstrap.ticker.C:
+				connectedPeers := b.peerState.Amount()
+
+				// return when we are connected to enough peers
+				if connectedPeers >= b.minPeers {
+					logger.Info("already connected to enough peer's")
+					continue
+				}
+
+				b.Bootstrap(context.Background())
+
+			}
+		}
+
+	}()
+
+	// normal bootstrap
 	go func() {
 
 		lastNetworkState := len(b.host.Network().Peers())
 
-		hb := time.Now()
-
 		for {
+			select {
+			case <-b.bootstrap.closer:
+				return
+			case <-b.bootstrap.ticker.C:
 
-			//Break in case we stopped the bootstrapping process
-			if !b.startedState.HasStarted() {
-				logger.Warning("stop worker since bootstrap hasn't started")
-				break
+				myAddresses := len(b.host.Network().Peers())
+
+				//Continue when we are connected to the minPeer amount
+				if b.peerState.Amount() >= b.minPeers {
+					logger.Info("already connected to enough peer's")
+					continue
+				}
+
+				// bootstrap on network delta (delta between the amount
+				// of our addresses and the last known amount of addresses)
+				if myAddresses != lastNetworkState {
+					lastNetworkState = myAddresses
+					if err := b.Bootstrap(context.Background()); err != nil {
+						logger.Error(err)
+					}
+				}
+
 			}
-
-			myAddresses := len(b.host.Network().Peers())
-			connectedPeers := b.peerState.Amount()
-
-			//Continue when we are connected to the minPeer amount
-			if connectedPeers >= b.minPeers {
-				logger.Info("already connected to enough peer's")
-				hb = time.Now()
-				time.Sleep(b.bootstrapInterval)
-				continue
-			}
-
-			//Bootstrap on network delta (delta between the amount of our addresses)
-			if myAddresses != lastNetworkState {
-				lastNetworkState = myAddresses
-				b.Bootstrap(context.Background())
-			}
-
-			//Hard bootstrap
-			if time.Now().After(hb.Add(b.hardBootstrap)) {
-				logger.Debug("Hard bootstrap")
-				b.Bootstrap(context.Background())
-				hb = time.Now()
-			}
-
-			//Wait some time for the new round
-			time.Sleep(b.bootstrapInterval)
-
 		}
 
 	}()
@@ -190,13 +210,19 @@ func New(h host.Host, c Config) (*Bootstrap, error) {
 	}
 
 	return &Bootstrap{
-		minPeers:          c.MinPeers,
-		bootstrapPeers:    peers,
-		host:              h,
-		hardBootstrap:     c.HardBootstrap,
-		bootstrapInterval: c.BootstrapInterval,
-		startedState:      startedState.StateFactory(),
-		peerState:         peerState.StateFactory(),
+		minPeers:       c.MinPeers,
+		bootstrapPeers: peers,
+		host:           h,
+		hardBootstrap: wrappedTicker{
+			ticker: time.NewTicker(c.HardBootstrap),
+			closer: make(chan struct{}),
+		},
+		bootstrap: wrappedTicker{
+			ticker: time.NewTicker(c.BootstrapInterval),
+			closer: make(chan struct{}),
+		},
+		startedState: startedState.StateFactory(),
+		peerState:    peerState.StateFactory(),
 	}, nil
 
 }

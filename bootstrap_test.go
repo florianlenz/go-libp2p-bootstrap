@@ -37,8 +37,6 @@ func TestNewBootstrap(t *testing.T) {
 
 	require.Equal(t, len(bootstrapPeers), len(bootstrap.bootstrapPeers))
 	require.Equal(t, 4, bootstrap.minPeers)
-	require.Equal(t, time.Second*2, bootstrap.bootstrapInterval)
-	require.Equal(t, time.Second*5, bootstrap.hardBootstrap)
 
 }
 
