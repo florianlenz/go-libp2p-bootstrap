@@ -140,7 +140,9 @@ func (b *Bootstrap) Start(ctx context.Context) error {
 					continue
 				}
 
-				b.Bootstrap(context.Background())
+				if err := b.Bootstrap(context.Background()); err != nil {
+					logger.Error(err)
+				}
 
 			}
 		}
